@@ -1,4 +1,553 @@
-// График областей применения
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика и сравнение нейросетей</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: white;
+            color: white;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            padding: 80px 0;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            background-color: black;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.2); }
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .stat-card {
+            background-color: black;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: black;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .neural-networks {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-bottom: 60px;
+        }
+
+        .nn-card {
+            background-color: black;
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .nn-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .nn-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #ff6b6b;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .pros, .cons {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .pros h4 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .cons h4 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .pros ul, .cons ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .pros li, .cons li {
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+        .pros li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ecdc4;
+            font-weight: bold;
+        }.cons li:before {
+            content: "✗";
+            position: absolute;
+            left: 0;
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .use-cases {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+
+        .use-cases h4 {
+            color: #ffd93d;
+            margin-bottom: 10px;
+        }
+
+        .use-cases ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .use-cases li {
+            margin-bottom: 5px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .use-cases li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #ffd93d;
+            font-weight: bold;
+        }
+
+        .comparison-table {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 60px;
+            overflow-x: auto;
+        }
+
+        .comparison-table h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #4ecdc4;
+            font-size: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: 600;
+            color: #4ecdc4;
+        }
+
+        td {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .rating {
+            display: flex;
+            align-items: center;
+        }
+
+        .star {
+            color: #ffd93d;
+            margin-right: 2px;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            background-color: grey;
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+            
+            .neural-networks {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .animated {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Статистика и сравнение нейросетей</h1>
+            <p>Подробный анализ популярных нейросетей, их преимуществ, недостатков и областей применения</p>
+        </div>
+    </div>
+<div class="container">
+        <div class="stats-grid animated">
+            <div class="stat-card">
+                <h3>Популярность нейросетей</h3>
+                <div class="chart-container">
+                    <canvas id="popularityChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Области применения</h3>
+                <div class="chart-container">
+                    <canvas id="applicationChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <h3>Рост использования</h3>
+                <div class="chart-container">
+                    <canvas id="growthChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="neural-networks animated">
+            <div class="nn-card">
+                <h3>ChatGPT</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Отличное понимание контекста</li>
+                            <li>Большая база знаний</li>
+                            <li>Удобный интерфейс</li>
+                            <li>Быстрые ответы</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Ограничения по дате знаний</li>
+                            <li>Может генерировать неточности</li>
+                            <li>Платная подписка для GPT-4</li>
+                            <li>Ограничения на запросы</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Написание текстов и статей</li>
+                        <li>Помощь в программировании</li>
+                        <li>Образовательные задачи</li>
+                        <li>Генерация идей</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="nn-card">
+                <h3>Claude</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Высокая точность ответов</li>
+                            <li>Этичность и безопасность</li>
+                            <li>Хорошая работа с документами</li>
+                            <li>Длинные контексты</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Меньшая популярность</li>
+                            <li>Ограниченный доступ</li>
+                            <li>Консервативность в ответах</li>
+                            <li>Меньше интеграций</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Анализ документов</li>
+                        <li>Исследовательские задачи</li>
+                        <li>Этичный контент</li>
+                        <li>Сложные рассуждения</li>
+                    </ul>
+                </div>
+            </div>
+<div class="nn-card">
+                <h3>Midjourney</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Высокое качество изображений</li>
+                            <li>Художественный стиль</li>
+                            <li>Активное сообщество</li>
+                            <li>Регулярные обновления</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Только через Discord</li>
+                            <li>Платная подписка</li>
+                            <li>Ограниченный контроль</li>
+                            <li>Нет API</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Художественные иллюстрации</li>
+                        <li>Концепт-арт</li>
+                        <li>Творческие проекты</li>
+                        <li>Визуализация идей</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="nn-card">
+                <h3>DALL-E</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Интеграция с ChatGPT</li>
+                            <li>Хорошее понимание текста</li>
+                            <li>Безопасность контента</li>
+                            <li>Удобный интерфейс</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Ограничения по стилю</li>
+                            <li>Платные кредиты</li>
+                            <li>Меньшая детализация</li>
+                            <li>Цензура контента</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Бизнес-презентации</li>
+                        <li>Образовательный контент</li>
+                        <li>Простые иллюстрации</li>
+                        <li>Быстрое прототипирование</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="nn-card">
+                <h3>Stable Diffusion</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Открытый исходный код</li>
+                            <li>Локальное использование</li>
+                            <li>Множество моделей</li>
+                            <li>Полный контроль</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Требует технических знаний</li>
+                            <li>Высокие системные требования</li>
+                            <li>Сложная настройка</li>
+                            <li>Время на обучение</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Персонализированные модели</li>
+                        <li>Экспериментальные проекты</li>
+                        <li>Массовая генерация</li>
+                        <li>Исследования в области ИИ</li>
+                    </ul>
+                </div>
+            </div>
+<div class="nn-card">
+                <h3>Google Gemini</h3>
+                <div class="pros-cons">
+                    <div class="pros">
+                        <h4>Преимущества</h4>
+                        <ul>
+                            <li>Мультимодальность</li>
+                            <li>Интеграция с Google</li>
+                            <li>Обработка видео</li>
+                            <li>Актуальная информация</li>
+                        </ul>
+                    </div>
+                    <div class="cons">
+                        <h4>Недостатки</h4>
+                        <ul>
+                            <li>Ограниченная доступность</li>
+                            <li>Новизна технологии</li>
+                            <li>Меньше обучающих данных</li>
+                            <li>Зависимость от Google</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="use-cases">
+                    <h4>Лучше всего подходит для:</h4>
+                    <ul>
+                        <li>Анализ видео и изображений</li>
+                        <li>Работа с Google сервисами</li>
+                        <li>Мультимодальные задачи</li>
+                        <li>Поиск информации в реальном времени</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+
+    <div class="footer">
+        <div class="container">
+            <p>&copy; 2025 Статистика нейросетей. Данные актуальны на момент создания.</p>
+        </div>
+    </div>
+
+    <script>
+        // График популярности
+        const ctx1 = document.getElementById('popularityChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['ChatGPT', 'Claude', 'Midjourney', 'DALL-E', 'Stable Diffusion', 'Google Gemini'],
+                datasets: [{
+                    data: [35, 15, 20, 12, 10, 8],
+                    backgroundColor: [
+                        '#ff6b6b',
+                        '#4ecdc4',
+                        '#45b7d1',
+                        '#96ceb4',
+                        '#ffd93d',
+                        '#ff9ff3'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'white',
+                            padding: 20
+                        }
+                    }
+                }
+            }
+        });// График областей применения
         const ctx2 = document.getElementById('applicationChart').getContext('2d');
         new Chart(ctx2, {
             type: 'bar',
